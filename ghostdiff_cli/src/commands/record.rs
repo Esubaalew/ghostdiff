@@ -317,7 +317,7 @@ fn write_recorder(output: &PathBuf, recorder: &Recorder) -> Result<()> {
 /// Record demo events for testing.
 fn record_demo_events(recorder: &mut Recorder, num_events: usize, verbose: bool) -> Result<()> {
     // Simulate a typical program execution
-    let events = vec![
+    let events = [
         ("initialize", vec!["config.json"], None),
         ("load_data", vec!["input.csv"], Some("1000 rows")),
         ("preprocess", vec![], Some("cleaned")),
