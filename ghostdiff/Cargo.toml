@@ -1,0 +1,11 @@
+[package]
+name = "ghostdiff"
+description = "Time-travel debugger and AI execution diffing tool with automatic instrumentation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+ghostdiff_core = { path = "../ghostdiff_core" }
+ghostdiff_macros = { path = "../ghostdiff_macros" }

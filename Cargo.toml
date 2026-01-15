@@ -1,0 +1,15 @@
+[workspace]
+resolver = "2"
+members = [
+    "ghostdiff_core",
+    "ghostdiff_macros",
+    "ghostdiff",
+    "ghostdiff_cli",
+    "ghostdiff_ui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["ghostdiff contributors"]

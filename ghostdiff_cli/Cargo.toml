@@ -1,0 +1,20 @@
+[package]
+name = "ghostdiff_cli"
+description = "CLI for ghostdiff time-travel debugger"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "ghostdiff"
+path = "src/main.rs"
+
+[dependencies]
+ghostdiff_core = { path = "../ghostdiff_core" }
+ghostdiff = { path = "../ghostdiff" }
+clap = { version = "4.4", features = ["derive", "env"] }
+serde_json = "1.0"
+anyhow = "1.0"
+colored = "2.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

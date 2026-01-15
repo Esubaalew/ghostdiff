@@ -1,0 +1,13 @@
+[package]
+name = "ghostdiff_ui"
+description = "WASM UI for ghostdiff time-travel debugger"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ghostdiff_core = { path = "../ghostdiff_core" }
