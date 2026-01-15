@@ -241,9 +241,7 @@ pub struct ChatCompletionResponse {
 impl ChatCompletionResponse {
     /// Returns the content of the first choice, if present.
     pub fn first_content(&self) -> Option<String> {
-        self.choices
-            .first()
-            .map(|c| c.message.content.clone())
+        self.choices.first().map(|c| c.message.content.clone())
     }
 
     /// Returns all assistant message contents.
@@ -345,7 +343,8 @@ fn record_chat_response(request: &ChatCompletionRequest, response: &ChatCompleti
             // Token-level tracking (if logprobs enabled)
             if let Some(logprobs) = &choice.logprobs {
                 if let Some(tokens) = &logprobs.content {
-                    let payload = serde_json::to_string(tokens).unwrap_or_else(|_| "[]".to_string());
+                    let payload =
+                        serde_json::to_string(tokens).unwrap_or_else(|_| "[]".to_string());
                     recorder.track_custom("ai_tokens", payload);
                 }
             }

@@ -150,44 +150,52 @@ impl AiDiffEngine {
         let a_ctx = AiContext::from_recorder(run_a);
         let b_ctx = AiContext::from_recorder(run_b);
 
-        let token_divergence = detect_token_divergence(
-            &a_ctx.tokens,
-            &b_ctx.tokens,
-            self.config.max_token_compare,
-        );
+        let token_divergence =
+            detect_token_divergence(&a_ctx.tokens, &b_ctx.tokens, self.config.max_token_compare);
 
         let logprob_drift = compute_logprob_drift(&a_ctx.tokens, &b_ctx.tokens);
         let entropy_comparison = compute_entropy(&a_ctx.tokens, &b_ctx.tokens);
 
-        let embedding_similarity = compare_embeddings(&a_ctx.embeddings, &b_ctx.embeddings, self.config.embedding_similarity_threshold);
+        let embedding_similarity = compare_embeddings(
+            &a_ctx.embeddings,
+            &b_ctx.embeddings,
+            self.config.embedding_similarity_threshold,
+        );
 
         let prompt_change = a_ctx.prompt != b_ctx.prompt;
-        let model_change = a_ctx.model != b_ctx.model && a_ctx.model.is_some() && b_ctx.model.is_some();
-        let config_change = a_ctx.config != b_ctx.config && a_ctx.config.is_some() && b_ctx.config.is_some();
-        let upstream_divergence = detect_upstream_divergence(run_a, run_b, a_ctx.first_ai_event_index, b_ctx.first_ai_event_index);
+        let model_change =
+            a_ctx.model != b_ctx.model && a_ctx.model.is_some() && b_ctx.model.is_some();
+        let config_change =
+            a_ctx.config != b_ctx.config && a_ctx.config.is_some() && b_ctx.config.is_some();
+        let upstream_divergence = detect_upstream_divergence(
+            run_a,
+            run_b,
+            a_ctx.first_ai_event_index,
+            b_ctx.first_ai_event_index,
+        );
 
-        let root_cause = classify_root_cause(
+        let root_cause = classify_root_cause(RootCauseInputs {
             prompt_change,
             config_change,
             model_change,
             upstream_divergence,
-            &token_divergence,
-            &logprob_drift,
-            &entropy_comparison,
-            &self.config,
-        );
+            token_divergence: &token_divergence,
+            logprob_drift: &logprob_drift,
+            entropy: &entropy_comparison,
+            config: &self.config,
+        });
 
-        let explanation = build_explanation(
-            &root_cause,
-            &token_divergence,
-            &logprob_drift,
-            &entropy_comparison,
-            &embedding_similarity,
+        let explanation = build_explanation(ExplanationInputs {
+            root_cause: &root_cause,
+            token_divergence: &token_divergence,
+            logprob_drift: &logprob_drift,
+            entropy: &entropy_comparison,
+            embedding_similarity: &embedding_similarity,
             prompt_change,
             config_change,
             model_change,
             upstream_divergence,
-        );
+        });
 
         AiDiffResult {
             run_a_id: run_a.run_id().to_string(),
@@ -240,41 +248,39 @@ impl AiContext {
 
         for (idx, event) in recorder.events().iter().enumerate() {
             match &event.kind {
-                EventKind::Custom { kind, payload } => {
-                    match kind.as_str() {
-                        "ai_prompt" => {
-                            if ctx.first_ai_event_index.is_none() {
-                                ctx.first_ai_event_index = Some(idx);
-                            }
-                            ctx.prompt = Some(payload.clone());
+                EventKind::Custom { kind, payload } => match kind.as_str() {
+                    "ai_prompt" => {
+                        if ctx.first_ai_event_index.is_none() {
+                            ctx.first_ai_event_index = Some(idx);
                         }
-                        "ai_model_config" => {
-                            let cfg = parse_model_config(payload);
-                            if let Some(cfg) = cfg {
-                                if ctx.model.is_none() {
-                                    ctx.model = cfg.model.clone();
-                                }
-                                ctx.config = Some(cfg);
-                            }
-                        }
-                        "ai_tokens" => {
-                            if ctx.first_ai_event_index.is_none() {
-                                ctx.first_ai_event_index = Some(idx);
-                            }
-                            let tokens = parse_tokens(payload);
-                            ctx.tokens.extend(tokens);
-                        }
-                        "embedding" => {
-                            if ctx.first_ai_event_index.is_none() {
-                                ctx.first_ai_event_index = Some(idx);
-                            }
-                            if let Some(emb) = parse_embedding(payload) {
-                                ctx.embeddings.push(emb);
-                            }
-                        }
-                        _ => {}
+                        ctx.prompt = Some(payload.clone());
                     }
-                }
+                    "ai_model_config" => {
+                        let cfg = parse_model_config(payload);
+                        if let Some(cfg) = cfg {
+                            if ctx.model.is_none() {
+                                ctx.model = cfg.model.clone();
+                            }
+                            ctx.config = Some(cfg);
+                        }
+                    }
+                    "ai_tokens" => {
+                        if ctx.first_ai_event_index.is_none() {
+                            ctx.first_ai_event_index = Some(idx);
+                        }
+                        let tokens = parse_tokens(payload);
+                        ctx.tokens.extend(tokens);
+                    }
+                    "embedding" => {
+                        if ctx.first_ai_event_index.is_none() {
+                            ctx.first_ai_event_index = Some(idx);
+                        }
+                        if let Some(emb) = parse_embedding(payload) {
+                            ctx.embeddings.push(emb);
+                        }
+                    }
+                    _ => {}
+                },
                 EventKind::AIOutput { content } => {
                     if ctx.first_ai_event_index.is_none() {
                         ctx.first_ai_event_index = Some(idx);
@@ -299,7 +305,10 @@ impl AiContext {
 
 fn parse_model_config(payload: &str) -> Option<ModelConfigSnapshot> {
     let value: Value = serde_json::from_str(payload).ok()?;
-    let model = value.get("model").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let model = value
+        .get("model")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let temperature = value.get("temperature").and_then(|v| v.as_f64());
     let max_tokens = value.get("max_tokens").and_then(|v| v.as_u64());
     Some(ModelConfigSnapshot {
@@ -330,7 +339,8 @@ fn parse_tokens(payload: &str) -> Vec<TokenRecord> {
 
 fn parse_embedding(payload: &str) -> Option<EmbeddingRecord> {
     let value: Value = serde_json::from_str(payload).ok()?;
-    let vector_value = value.get("vector")
+    let vector_value = value
+        .get("vector")
         .or_else(|| value.get("embedding"))
         .or_else(|| value.get("data"));
 
@@ -369,7 +379,10 @@ fn detect_token_divergence(
     None
 }
 
-fn compute_logprob_drift(tokens_a: &[TokenRecord], tokens_b: &[TokenRecord]) -> Option<LogprobDrift> {
+fn compute_logprob_drift(
+    tokens_a: &[TokenRecord],
+    tokens_b: &[TokenRecord],
+) -> Option<LogprobDrift> {
     let logprobs_a: Vec<f64> = tokens_a.iter().filter_map(|t| t.logprob).collect();
     let logprobs_b: Vec<f64> = tokens_b.iter().filter_map(|t| t.logprob).collect();
 
@@ -388,7 +401,10 @@ fn compute_logprob_drift(tokens_a: &[TokenRecord], tokens_b: &[TokenRecord]) -> 
     })
 }
 
-fn compute_entropy(tokens_a: &[TokenRecord], tokens_b: &[TokenRecord]) -> Option<EntropyComparison> {
+fn compute_entropy(
+    tokens_a: &[TokenRecord],
+    tokens_b: &[TokenRecord],
+) -> Option<EntropyComparison> {
     let ent_a = estimate_entropy(tokens_a)?;
     let ent_b = estimate_entropy(tokens_b)?;
     let delta = (ent_a - ent_b).abs();
@@ -473,32 +489,43 @@ fn collect_function_signatures(events: &[Event], limit: usize) -> Vec<String> {
         .collect()
 }
 
-fn classify_root_cause(
+#[derive(Debug, Clone)]
+struct RootCauseInputs<'a> {
     prompt_change: bool,
     config_change: bool,
     model_change: bool,
     upstream_divergence: bool,
-    token_divergence: &Option<TokenDivergence>,
-    logprob_drift: &Option<LogprobDrift>,
-    entropy: &Option<EntropyComparison>,
-    config: &AiDiffConfig,
-) -> RootCause {
-    if upstream_divergence {
+    token_divergence: &'a Option<TokenDivergence>,
+    logprob_drift: &'a Option<LogprobDrift>,
+    entropy: &'a Option<EntropyComparison>,
+    config: &'a AiDiffConfig,
+}
+
+fn classify_root_cause(inputs: RootCauseInputs<'_>) -> RootCause {
+    if inputs.upstream_divergence {
         return RootCause::UpstreamFunctionDivergence;
     }
-    if prompt_change {
+    if inputs.prompt_change {
         return RootCause::PromptChange;
     }
-    if model_change {
+    if inputs.model_change {
         return RootCause::ModelChange;
     }
-    if config_change {
+    if inputs.config_change {
         return RootCause::ConfigChange;
     }
 
-    if token_divergence.is_some()
-        || logprob_drift.as_ref().map(|d| d.drift >= config.logprob_drift_threshold).unwrap_or(false)
-        || entropy.as_ref().map(|e| e.delta >= config.entropy_delta_threshold).unwrap_or(false)
+    if inputs.token_divergence.is_some()
+        || inputs
+            .logprob_drift
+            .as_ref()
+            .map(|d| d.drift >= inputs.config.logprob_drift_threshold)
+            .unwrap_or(false)
+        || inputs
+            .entropy
+            .as_ref()
+            .map(|e| e.delta >= inputs.config.entropy_delta_threshold)
+            .unwrap_or(false)
     {
         return RootCause::SamplingInstability;
     }
@@ -506,22 +533,25 @@ fn classify_root_cause(
     RootCause::None
 }
 
-fn build_explanation(
-    root_cause: &RootCause,
-    token_divergence: &Option<TokenDivergence>,
-    logprob_drift: &Option<LogprobDrift>,
-    entropy: &Option<EntropyComparison>,
-    embedding_similarity: &Option<EmbeddingComparison>,
+#[derive(Debug, Clone)]
+struct ExplanationInputs<'a> {
+    root_cause: &'a RootCause,
+    token_divergence: &'a Option<TokenDivergence>,
+    logprob_drift: &'a Option<LogprobDrift>,
+    entropy: &'a Option<EntropyComparison>,
+    embedding_similarity: &'a Option<EmbeddingComparison>,
     prompt_change: bool,
     config_change: bool,
     model_change: bool,
     upstream_divergence: bool,
-) -> String {
+}
+
+fn build_explanation(inputs: ExplanationInputs<'_>) -> String {
     let mut lines = Vec::new();
 
-    lines.push(format!("Root cause: {:?}", root_cause));
+    lines.push(format!("Root cause: {:?}", inputs.root_cause));
 
-    if let Some(div) = token_divergence {
+    if let Some(div) = inputs.token_divergence {
         lines.push(format!(
             "Divergence started at token {} ('{}' vs '{}')",
             div.first_divergence_index, div.token_a, div.token_b
@@ -530,41 +560,41 @@ fn build_explanation(
         lines.push("No token-level divergence detected.".to_string());
     }
 
-    if let Some(drift) = logprob_drift {
+    if let Some(drift) = inputs.logprob_drift {
         lines.push(format!(
             "Logprob drift: mean_a={:.3}, mean_b={:.3}, drift={:.3}",
             drift.mean_logprob_a, drift.mean_logprob_b, drift.drift
         ));
     }
 
-    if let Some(ent) = entropy {
+    if let Some(ent) = inputs.entropy {
         lines.push(format!(
             "Entropy delta: a={:.3}, b={:.3}, delta={:.3}",
             ent.entropy_a, ent.entropy_b, ent.delta
         ));
     }
 
-    if let Some(emb) = embedding_similarity {
+    if let Some(emb) = inputs.embedding_similarity {
         lines.push(format!(
             "Embedding similarity: {:.3} (above threshold: {})",
             emb.cosine_similarity, emb.above_threshold
         ));
     }
 
-    if prompt_change {
+    if inputs.prompt_change {
         lines.push("Prompt changed between runs.".to_string());
     }
-    if config_change {
+    if inputs.config_change {
         lines.push("Model configuration changed between runs.".to_string());
     }
-    if model_change {
+    if inputs.model_change {
         lines.push("Model changed between runs.".to_string());
     }
-    if upstream_divergence {
+    if inputs.upstream_divergence {
         lines.push("Upstream function behavior diverged before AI call.".to_string());
     }
 
-    let determinism = match root_cause {
+    let determinism = match inputs.root_cause {
         RootCause::SamplingInstability => "stochastic",
         RootCause::None => "deterministic",
         _ => "deterministic",
@@ -596,8 +626,14 @@ mod tests {
     fn test_token_divergence() {
         let mut a = Recorder::new("a");
         let mut b = Recorder::new("b");
-        a.track_custom("ai_tokens", r#"[{"token":"Hello","logprob":-0.1},{"token":"world","logprob":-0.2}]"#);
-        b.track_custom("ai_tokens", r#"[{"token":"Hello","logprob":-0.1},{"token":"mars","logprob":-0.2}]"#);
+        a.track_custom(
+            "ai_tokens",
+            r#"[{"token":"Hello","logprob":-0.1},{"token":"world","logprob":-0.2}]"#,
+        );
+        b.track_custom(
+            "ai_tokens",
+            r#"[{"token":"Hello","logprob":-0.1},{"token":"mars","logprob":-0.2}]"#,
+        );
 
         let diff = AiDiffEngine::new().compare(&a, &b);
         assert!(diff.token_divergence.is_some());

@@ -13,9 +13,9 @@ use crate::commands::OutputFormat;
 use anyhow::{Context, Result};
 use clap::Args;
 use colored::Colorize;
+use ghostdiff_core::ai_diff::AiDiffEngine;
 use ghostdiff_core::diff::DifferenceKind;
 use ghostdiff_core::{DiffEngine, Recorder};
-use ghostdiff_core::ai_diff::AiDiffEngine;
 use std::fs;
 use std::path::PathBuf;
 
@@ -52,7 +52,6 @@ pub struct DiffArgs {
     /// Explain AI divergence (requires --ai)
     #[arg(long)]
     pub explain: bool,
-
     // === Future flags ===
     // TODO: #[arg(long)]
     // pub watch: bool,  // Live diff mode
@@ -186,7 +185,10 @@ fn print_text_diff(
         let severity_badge = format_severity(diff.severity);
 
         match &diff.kind {
-            DifferenceKind::Missing { event, missing_from } => {
+            DifferenceKind::Missing {
+                event,
+                missing_from,
+            } => {
                 let side = match missing_from {
                     ghostdiff_core::diff::RunSide::RunA => "Run A",
                     ghostdiff_core::diff::RunSide::RunB => "Run B",
@@ -242,9 +244,7 @@ fn print_text_diff(
                     count_b
                 );
             }
-            DifferenceKind::TimingDifference {
-                delta_ms, ..
-            } => {
+            DifferenceKind::TimingDifference { delta_ms, .. } => {
                 println!(
                     "  {} {} Timing differs by {}ms",
                     severity_badge,
@@ -312,7 +312,6 @@ fn format_severity(severity: u8) -> String {
 //     // Support incremental updates
 //     todo!("WASM streaming")
 // }
-
 
 fn print_ai_diff(ai: &ghostdiff_core::ai_diff::AiDiffResult, explain: bool) -> Result<()> {
     println!("{}", "AI Semantic Diff".bold().underline());

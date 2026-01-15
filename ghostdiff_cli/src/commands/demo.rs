@@ -60,10 +60,30 @@ fn demo_recording(verbose: bool) -> Result<()> {
 
     let events = [
         ("main", vec![], None, "Entry point"),
-        ("load_config", vec!["config.json"], Some("Config { ... }"), "Load configuration"),
-        ("connect_db", vec!["postgres://..."], Some("Connection"), "Database connection"),
-        ("fetch_users", vec![], Some("[User; 100]"), "Fetch user data"),
-        ("process", vec!["batch_size=10"], Some("ProcessResult"), "Process data"),
+        (
+            "load_config",
+            vec!["config.json"],
+            Some("Config { ... }"),
+            "Load configuration",
+        ),
+        (
+            "connect_db",
+            vec!["postgres://..."],
+            Some("Connection"),
+            "Database connection",
+        ),
+        (
+            "fetch_users",
+            vec![],
+            Some("[User; 100]"),
+            "Fetch user data",
+        ),
+        (
+            "process",
+            vec!["batch_size=10"],
+            Some("ProcessResult"),
+            "Process data",
+        ),
     ];
 
     for (name, args, ret, description) in events {
@@ -160,10 +180,7 @@ fn demo_diffing(verbose: bool) -> Result<()> {
             );
         }
     } else {
-        println!(
-            "  {}",
-            "Use --verbose to see difference details".dimmed()
-        );
+        println!("  {}", "Use --verbose to see difference details".dimmed());
     }
 
     Ok(())
@@ -191,7 +208,8 @@ fn demo_ai_tracking(verbose: bool) -> Result<()> {
     );
 
     // Simulate streaming response
-    let response = "`&str` is a string slice (borrowed), while `String` is an owned, heap-allocated string.";
+    let response =
+        "`&str` is a string slice (borrowed), while `String` is an owned, heap-allocated string.";
     let tokens: Vec<&str> = response.split_whitespace().collect();
 
     if verbose {
@@ -221,7 +239,10 @@ fn demo_ai_tracking(verbose: bool) -> Result<()> {
     );
 
     // Print summary
-    println!("  {}", tracker.summary().lines().collect::<Vec<_>>().join("\n  "));
+    println!(
+        "  {}",
+        tracker.summary().lines().collect::<Vec<_>>().join("\n  ")
+    );
 
     Ok(())
 }

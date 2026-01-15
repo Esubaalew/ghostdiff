@@ -273,7 +273,10 @@ fn record_response(request: &GenerateContentRequest, response: &GenerateContentR
                     .split_whitespace()
                     .map(|t| json!({"token": t, "logprob": serde_json::Value::Null}))
                     .collect::<Vec<_>>();
-                recorder.track_custom("ai_tokens", serde_json::to_string(&tokens).unwrap_or_else(|_| "[]".to_string()));
+                recorder.track_custom(
+                    "ai_tokens",
+                    serde_json::to_string(&tokens).unwrap_or_else(|_| "[]".to_string()),
+                );
             }
         }
 
@@ -313,7 +316,11 @@ fn record_model_config(recorder: &mut Recorder, request: &GenerateContentRequest
 
 fn record_messages(recorder: &mut Recorder, contents: &[GeminiContent]) {
     for msg in contents {
-        let text = msg.parts.first().map(|p| p.text.clone()).unwrap_or_default();
+        let text = msg
+            .parts
+            .first()
+            .map(|p| p.text.clone())
+            .unwrap_or_default();
         let payload = json!({
             "role": msg.role,
             "content": text,
@@ -324,7 +331,11 @@ fn record_messages(recorder: &mut Recorder, contents: &[GeminiContent]) {
 
 fn record_prompt(recorder: &mut Recorder, contents: &[GeminiContent]) {
     if let Some(last_user) = contents.iter().rev().find(|m| m.role == "user") {
-        let text = last_user.parts.first().map(|p| p.text.clone()).unwrap_or_default();
+        let text = last_user
+            .parts
+            .first()
+            .map(|p| p.text.clone())
+            .unwrap_or_default();
         recorder.track_custom("ai_prompt", text);
     }
 }

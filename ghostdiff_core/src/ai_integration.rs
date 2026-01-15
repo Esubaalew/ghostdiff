@@ -617,8 +617,8 @@ impl AITracker {
     pub fn summary(&self) -> String {
         let mut lines = Vec::new();
 
-        lines.push(format!("AI Tracker Summary"));
-        lines.push(format!("=================="));
+        lines.push("AI Tracker Summary".to_string());
+        lines.push("==================".to_string());
         lines.push(format!("Interactions: {}", self.interactions.len()));
         lines.push(format!("Embeddings: {}", self.embeddings.len()));
         lines.push(format!(
@@ -635,7 +635,9 @@ impl AITracker {
         // Model breakdown
         let mut model_counts: HashMap<String, usize> = HashMap::new();
         for interaction in &self.interactions {
-            *model_counts.entry(interaction.config.model.clone()).or_insert(0) += 1;
+            *model_counts
+                .entry(interaction.config.model.clone())
+                .or_insert(0) += 1;
         }
 
         if !model_counts.is_empty() {
@@ -647,7 +649,11 @@ impl AITracker {
         }
 
         // Error count
-        let error_count = self.interactions.iter().filter(|i| i.error.is_some()).count();
+        let error_count = self
+            .interactions
+            .iter()
+            .filter(|i| i.error.is_some())
+            .count();
         if error_count > 0 {
             lines.push(format!("\nErrors: {}", error_count));
         }
@@ -696,10 +702,8 @@ mod tests {
         let mut tracker = AITracker::new();
         assert_eq!(tracker.interaction_count(), 0);
 
-        let id = tracker.start_interaction(
-            vec![Message::user("Hello")],
-            ModelConfig::new("test-model"),
-        );
+        let id =
+            tracker.start_interaction(vec![Message::user("Hello")], ModelConfig::new("test-model"));
 
         assert_eq!(tracker.interaction_count(), 1);
 

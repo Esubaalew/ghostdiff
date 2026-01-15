@@ -37,7 +37,6 @@ pub struct InspectArgs {
     /// Limit number of events to show
     #[arg(long)]
     pub limit: Option<usize>,
-
     // === Future flags ===
     // TODO: #[arg(long)]
     // pub replay: bool,  // Interactive replay mode
@@ -71,11 +70,7 @@ pub fn execute(args: InspectArgs, verbose: bool) -> Result<()> {
 /// Print human-readable inspection.
 fn print_text_inspection(recorder: &Recorder, args: &InspectArgs, verbose: bool) -> Result<()> {
     // Header
-    println!(
-        "{} {}",
-        "🔮 Run:".bold(),
-        recorder.run_id().cyan().bold()
-    );
+    println!("{} {}", "🔮 Run:".bold(), recorder.run_id().cyan().bold());
     println!();
 
     // Metadata
@@ -141,7 +136,12 @@ fn print_text_inspection(recorder: &Recorder, args: &InspectArgs, verbose: bool)
         let mut shown = 0;
         for event in events {
             if shown >= limit {
-                println!("  {} (showing {} of {})", "...".dimmed(), limit, events.len());
+                println!(
+                    "  {} (showing {} of {})",
+                    "...".dimmed(),
+                    limit,
+                    events.len()
+                );
                 break;
             }
 
@@ -157,10 +157,7 @@ fn print_text_inspection(recorder: &Recorder, args: &InspectArgs, verbose: bool)
             shown += 1;
         }
     } else {
-        println!(
-            "{}",
-            "Use --verbose to see event details".dimmed()
-        );
+        println!("{}", "Use --verbose to see event details".dimmed());
     }
 
     Ok(())
@@ -197,27 +194,13 @@ fn print_event(event: &ghostdiff_core::recorder::Event, verbose: bool) -> Result
         }
         EventKind::AIOutput { content } => {
             let preview = truncate(content, 60);
-            println!(
-                "  {} {} \"{}\"",
-                id_str,
-                type_badge,
-                preview.green()
-            );
+            println!("  {} {} \"{}\"", id_str, type_badge, preview.green());
         }
         EventKind::AsyncTaskSpawned { task_id } => {
-            println!(
-                "  {} {} spawned: {}",
-                id_str,
-                type_badge,
-                task_id.cyan()
-            );
+            println!("  {} {} spawned: {}", id_str, type_badge, task_id.cyan());
         }
         EventKind::AsyncTaskCompleted { task_id, success } => {
-            let status = if *success {
-                "✓".green()
-            } else {
-                "✗".red()
-            };
+            let status = if *success { "✓".green() } else { "✗".red() };
             println!(
                 "  {} {} completed: {} {}",
                 id_str,

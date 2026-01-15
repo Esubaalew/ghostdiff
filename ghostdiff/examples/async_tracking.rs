@@ -34,12 +34,12 @@ async fn generate_completion(prompt: &str) -> String {
 #[track(tags = ["aggregate"])]
 async fn aggregate_data(sources: Vec<&str>) -> Vec<String> {
     let mut results = Vec::new();
-    
+
     for source in sources {
         let data = fetch_data(source).await;
         results.push(data);
     }
-    
+
     results
 }
 
@@ -48,15 +48,15 @@ async fn aggregate_data(sources: Vec<&str>) -> Vec<String> {
 async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, String> {
     for attempt in 0..max_retries {
         simulate_delay(5).await;
-        
+
         // Simulate occasional failure
         if url.contains("flaky") && attempt < 2 {
             continue;
         }
-        
+
         return Ok(format!("Success after {} attempts: {}", attempt + 1, url));
     }
-    
+
     Err(format!("Failed after {} retries: {}", max_retries, url))
 }
 
@@ -64,7 +64,7 @@ async fn fetch_with_retry(url: &str, max_retries: u32) -> Result<String, String>
 async fn simulate_delay(_millis: u64) {
     // In a real async context, this would be:
     // tokio::time::sleep(Duration::from_millis(millis)).await;
-    
+
     // For this example, we just spin briefly
     std::thread::sleep(Duration::from_micros(100));
 }
@@ -76,15 +76,15 @@ async fn simulate_delay(_millis: u64) {
 /// Very simple executor that just polls futures to completion.
 /// In production, use tokio, async-std, or similar.
 fn block_on<F: std::future::Future>(fut: F) -> F::Output {
-    use std::future::Future;
-    use std::pin::Pin;
     use std::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
 
     // Create a no-op waker
     fn dummy_raw_waker() -> RawWaker {
         fn no_op(_: *const ()) {}
-        fn clone(_: *const ()) -> RawWaker { dummy_raw_waker() }
-        
+        fn clone(_: *const ()) -> RawWaker {
+            dummy_raw_waker()
+        }
+
         let vtable = &RawWakerVTable::new(clone, no_op, no_op, no_op);
         RawWaker::new(std::ptr::null(), vtable)
     }
@@ -178,9 +178,15 @@ fn main() {
     for event in recorder.events().iter().take(20) {
         let kind_str = match &event.kind {
             ghostdiff::recorder::EventKind::FunctionCall { name, .. } => format!("FN {}", name),
-            ghostdiff::recorder::EventKind::AsyncTaskSpawned { task_id } => format!("SPAWN {}", task_id),
+            ghostdiff::recorder::EventKind::AsyncTaskSpawned { task_id } => {
+                format!("SPAWN {}", task_id)
+            }
             ghostdiff::recorder::EventKind::AsyncTaskCompleted { task_id, success } => {
-                format!("COMPLETE {} ({})", task_id, if *success { "ok" } else { "err" })
+                format!(
+                    "COMPLETE {} ({})",
+                    task_id,
+                    if *success { "ok" } else { "err" }
+                )
             }
             ghostdiff::recorder::EventKind::AIOutput { content } => {
                 format!("AI \"{}\"", &content[..40.min(content.len())])
@@ -188,8 +194,11 @@ fn main() {
             ghostdiff::recorder::EventKind::Custom { kind, .. } => format!("CUSTOM {}", kind),
             _ => format!("{:?}", event.kind),
         };
-        
-        let parent = event.parent_id.map(|p| format!(" (parent: {})", p)).unwrap_or_default();
+
+        let parent = event
+            .parent_id
+            .map(|p| format!(" (parent: {})", p))
+            .unwrap_or_default();
         println!("  [{:>2}]{} {}", event.id, parent, kind_str);
     }
 

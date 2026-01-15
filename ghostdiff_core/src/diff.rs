@@ -403,14 +403,19 @@ impl DiffEngine {
                         DifferenceKind::ContentMismatch {
                             event_a: a.clone(),
                             event_b: b.clone(),
-                            description: format!("State snapshot '{}' differs from '{}'", label_a, label_b),
+                            description: format!(
+                                "State snapshot '{}' differs from '{}'",
+                                label_a, label_b
+                            ),
                         },
                         6,
                         format!("State snapshot '{}' differs", label_a),
                     ));
                 }
             }
-            (kind_a, kind_b) if std::mem::discriminant(kind_a) != std::mem::discriminant(kind_b) => {
+            (kind_a, kind_b)
+                if std::mem::discriminant(kind_a) != std::mem::discriminant(kind_b) =>
+            {
                 return Some(Difference::new(
                     0,
                     DifferenceKind::ContentMismatch {
@@ -491,7 +496,10 @@ impl DiffResult {
 
     /// Returns differences filtered by minimum severity.
     pub fn with_min_severity(&self, min: u8) -> Vec<&Difference> {
-        self.differences.iter().filter(|d| d.severity >= min).collect()
+        self.differences
+            .iter()
+            .filter(|d| d.severity >= min)
+            .collect()
     }
 
     /// Serializes the diff result to JSON.
@@ -519,18 +527,12 @@ impl DiffResult {
     pub fn summary(&self) -> String {
         let mut lines = Vec::new();
 
-        lines.push(format!(
-            "Comparing {} vs {}",
-            self.run_a_id, self.run_b_id
-        ));
+        lines.push(format!("Comparing {} vs {}", self.run_a_id, self.run_b_id));
         lines.push(format!(
             "Events: {} vs {} ({} matching)",
             self.stats.events_a, self.stats.events_b, self.stats.matching
         ));
-        lines.push(format!(
-            "Similarity: {:.1}%",
-            self.stats.similarity * 100.0
-        ));
+        lines.push(format!("Similarity: {:.1}%", self.stats.similarity * 100.0));
         lines.push(format!("Differences: {}", self.stats.differences));
 
         if !self.differences.is_empty() {
@@ -584,10 +586,10 @@ mod tests {
 
         let result = DiffEngine::compare(&run_a, &run_b);
         assert!(!result.is_identical());
-        assert!(result.differences.iter().any(|d| matches!(
-            &d.kind,
-            DifferenceKind::ContentMismatch { .. }
-        )));
+        assert!(result
+            .differences
+            .iter()
+            .any(|d| matches!(&d.kind, DifferenceKind::ContentMismatch { .. })));
     }
 
     #[test]
@@ -600,10 +602,10 @@ mod tests {
         run_b.track_ai_output("One");
 
         let result = DiffEngine::compare(&run_a, &run_b);
-        assert!(result.differences.iter().any(|d| matches!(
-            &d.kind,
-            DifferenceKind::Missing { .. }
-        )));
+        assert!(result
+            .differences
+            .iter()
+            .any(|d| matches!(&d.kind, DifferenceKind::Missing { .. })));
     }
 
     #[test]

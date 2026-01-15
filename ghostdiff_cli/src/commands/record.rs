@@ -18,8 +18,12 @@ use anyhow::{bail, Context, Result};
 use clap::Args;
 use colored::Colorize;
 use ghostdiff::track;
-use ghostdiff_core::providers::openai::{ChatCompletionRequest, ChatMessage, OpenAIClient, OpenAIError};
-use ghostdiff_core::providers::gemini::{GeminiClient, GenerateContentRequest, GeminiContent, GenerationConfig, GeminiError};
+use ghostdiff_core::providers::gemini::{
+    GeminiClient, GeminiContent, GeminiError, GenerateContentRequest, GenerationConfig,
+};
+use ghostdiff_core::providers::openai::{
+    ChatCompletionRequest, ChatMessage, OpenAIClient, OpenAIError,
+};
 use ghostdiff_core::runtime::{init_recorder, take_recorder};
 use ghostdiff_core::{AITracker, Recorder};
 use std::fs;
@@ -133,15 +137,9 @@ async fn record_gemini(args: &RecordArgs, verbose: bool) -> Result<()> {
         println!();
     }
 
-    let response = ask_gemini(
-        &prompt,
-        &client,
-        &model,
-        args.temperature,
-        args.max_tokens,
-    )
-    .await
-    .map_err(|e| anyhow::anyhow!(e))?;
+    let response = ask_gemini(&prompt, &client, &model, args.temperature, args.max_tokens)
+        .await
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     if verbose {
         println!("  Response: {}", response.green());
@@ -150,11 +148,12 @@ async fn record_gemini(args: &RecordArgs, verbose: bool) -> Result<()> {
     let mut recorder = take_recorder().context("Recorder not initialized")?;
     recorder.finalize();
 
-    let json = recorder.to_json().context("Failed to serialize recording")?;
+    let json = recorder
+        .to_json()
+        .context("Failed to serialize recording")?;
 
-    fs::write(&args.output, &json).with_context(|| {
-        format!("Failed to write recording to {}", args.output.display())
-    })?;
+    fs::write(&args.output, &json)
+        .with_context(|| format!("Failed to write recording to {}", args.output.display()))?;
 
     println!();
     println!(
@@ -217,11 +216,12 @@ async fn record_openai(args: &RecordArgs, verbose: bool) -> Result<()> {
     let mut recorder = take_recorder().context("Recorder not initialized")?;
     recorder.finalize();
 
-    let json = recorder.to_json().context("Failed to serialize recording")?;
+    let json = recorder
+        .to_json()
+        .context("Failed to serialize recording")?;
 
-    fs::write(&args.output, &json).with_context(|| {
-        format!("Failed to write recording to {}", args.output.display())
-    })?;
+    fs::write(&args.output, &json)
+        .with_context(|| format!("Failed to write recording to {}", args.output.display()))?;
 
     println!();
     println!(
@@ -391,7 +391,10 @@ fn record_ai_simulation(recorder: &mut Recorder, verbose: bool) -> Result<()> {
     }
 
     ai_tracker.complete_interaction(interaction_id, response);
-    ai_tracker.record_usage(interaction_id, ghostdiff_core::ai_integration::Usage::new(15, 8));
+    ai_tracker.record_usage(
+        interaction_id,
+        ghostdiff_core::ai_integration::Usage::new(15, 8),
+    );
 
     // Track AI output in recorder
     recorder.track_ai_output(response);
@@ -408,10 +411,7 @@ fn record_ai_simulation(recorder: &mut Recorder, verbose: bool) -> Result<()> {
     );
 
     // Track state after AI call
-    recorder.track_state_snapshot(
-        "after_ai_call",
-        r#"{"ai_calls": 1, "total_tokens": 23}"#,
-    );
+    recorder.track_state_snapshot("after_ai_call", r#"{"ai_calls": 1, "total_tokens": 23}"#);
 
     recorder.exit_scope();
 

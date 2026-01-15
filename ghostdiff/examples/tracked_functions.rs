@@ -90,12 +90,14 @@ fn get_secret_token() -> String {
 // ============================================================================
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct User {
     id: u64,
     name: String,
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct ProcessResult {
     success: bool,
     message: String,
@@ -171,7 +173,10 @@ fn main() {
 
     // Sensitive data handling
     let auth_result = authenticate("user@example.com", "secret123");
-    println!("Authentication: {}", if auth_result { "success" } else { "failed" });
+    println!(
+        "Authentication: {}",
+        if auth_result { "success" } else { "failed" }
+    );
 
     let token = get_secret_token();
     println!("Got token: {}...", &token[..10]);
@@ -211,7 +216,11 @@ fn main() {
     println!("Events recorded:");
     for event in recorder.events() {
         match &event.kind {
-            ghostdiff::recorder::EventKind::FunctionCall { name, args, return_value } => {
+            ghostdiff::recorder::EventKind::FunctionCall {
+                name,
+                args,
+                return_value,
+            } => {
                 let args_str = if args.is_empty() {
                     "()".to_string()
                 } else {

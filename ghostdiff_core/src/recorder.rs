@@ -513,7 +513,12 @@ impl Recorder {
     where
         F: Fn(&Event) -> bool,
     {
-        let filtered_events: Vec<Event> = self.events.iter().filter(|e| predicate(e)).cloned().collect();
+        let filtered_events: Vec<Event> = self
+            .events
+            .iter()
+            .filter(|e| predicate(e))
+            .cloned()
+            .collect();
 
         let max_id = filtered_events.iter().map(|e| e.id).max().unwrap_or(0);
 

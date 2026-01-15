@@ -58,12 +58,12 @@
 //! }
 //! ```
 
+pub mod ai_diff;
 pub mod ai_integration;
 pub mod diff;
+pub mod providers;
 pub mod recorder;
 pub mod runtime;
-pub mod providers;
-pub mod ai_diff;
 
 pub use ai_integration::AITracker;
 pub use diff::DiffEngine;

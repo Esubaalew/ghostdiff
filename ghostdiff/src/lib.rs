@@ -104,12 +104,12 @@
 pub use ghostdiff_macros::track;
 
 // Re-export core types
+pub use ghostdiff_core::ai_diff;
 pub use ghostdiff_core::ai_integration;
 pub use ghostdiff_core::diff;
+pub use ghostdiff_core::providers;
 pub use ghostdiff_core::recorder;
 pub use ghostdiff_core::runtime;
-pub use ghostdiff_core::providers;
-pub use ghostdiff_core::ai_diff;
 
 pub use ghostdiff_core::AITracker;
 pub use ghostdiff_core::DiffEngine;
@@ -134,8 +134,8 @@ pub mod prelude {
     };
 
     // Common types
+    pub use ghostdiff_core::ai_diff::{AiDiffEngine, AiDiffResult, RootCause};
     pub use ghostdiff_core::ai_integration::{Message, ModelConfig, Usage};
     pub use ghostdiff_core::diff::{DiffConfig, DiffResult, Difference, DifferenceKind};
     pub use ghostdiff_core::recorder::{Event, EventKind};
-    pub use ghostdiff_core::ai_diff::{AiDiffEngine, AiDiffResult, RootCause};
 }
